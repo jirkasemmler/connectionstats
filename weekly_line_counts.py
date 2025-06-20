@@ -1,6 +1,7 @@
 import os
 from datetime import datetime, timedelta
 from git import Repo, exc
+import csv
 
 
 def clone_or_open_repo(url, path):
@@ -27,7 +28,7 @@ def count_lines_in_commit(commit, file_path):
         return None
 
 
-def main(repo_url, file_path, branch='main'):
+def main(repo_url, file_path, branch='main', csv_path=None):
     repo = clone_or_open_repo(repo_url, 'repo')
     results = []
     start = datetime(2023, 1, 1)
@@ -39,8 +40,14 @@ def main(repo_url, file_path, branch='main'):
             if count is not None:
                 results.append((start.strftime('%Y-%m-%d'), count))
         start += timedelta(weeks=1)
-    for date_str, count in results:
-        print(f"{date_str}: {count}")
+    if csv_path:
+        with open(csv_path, 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(['date', 'lines'])
+            writer.writerows(results)
+    else:
+        for date_str, count in results:
+            print(f"{date_str}: {count}")
 
 
 if __name__ == '__main__':
@@ -50,6 +57,7 @@ if __name__ == '__main__':
     parser.add_argument('repo_url', help='URL of the GitHub repository')
     parser.add_argument('file_path', help='Path to the file within the repository')
     parser.add_argument('--branch', default='main', help='Branch to inspect (default: main)')
+    parser.add_argument('--csv', dest='csv_path', help='Path to output CSV file')
     args = parser.parse_args()
 
-    main(args.repo_url, args.file_path, branch=args.branch)
+    main(args.repo_url, args.file_path, branch=args.branch, csv_path=args.csv_path)
